@@ -1,3 +1,5 @@
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+
 /**
  * Created by Vks on 04.09.2015.
  */
@@ -9,13 +11,10 @@ public class Percolation {
 
     private final int size;
 
-
     private final int top;
     private final int bottom;
-    private final int N;
 
-    private int[] roots;
-    private int[] weights;
+    private WeightedQuickUnionUF unionUF;
 
     public Percolation(int N) {
         if (N <= 0) {
@@ -30,13 +29,7 @@ public class Percolation {
         }
         top = N * N;
         bottom = N * N + 1;
-        roots = new int[N * N + 2];
-        weights = new int[N * N + 2];
-        for (int i = 0; i < N * N + 2; i++) {
-            roots[i] = i;
-            weights[i] = 1;
-        }
-        this.N = N;
+        unionUF = new WeightedQuickUnionUF(N * N + 2);
     }
 
     public void open(int i, int j) {
@@ -45,31 +38,32 @@ public class Percolation {
         j--;
         if (matrix[i][j] == blocked) {
             matrix[i][j] = open;
+            int cell = i + j * size;
             if (i > 0) {
-                if (isOpen(i, j + 1)) {
-                    connect(i + j * N, (i - 1) + j * N);
+                if (matrix[i - 1][j] != blocked) {
+                    unionUF.union(cell, cell - 1);
                 }
             }
-            if (i < N - 1) {
-                if (isOpen(i + 2, j + 1)) {
-                    connect(i + j * N, (i + 1) + j * N);
+            if (i < size - 1) {
+                if (matrix[i + 1][j] != blocked) {
+                    unionUF.union(cell, cell + 1);
                 }
             }
             if (j > 0) {
-                if (isOpen(i + 1, j)) {
-                    connect(i + j * N, i + (j - 1) * N);
+                if (matrix[i][j - 1] != blocked) {
+                    unionUF.union(cell, cell - size);
                 }
             }
-            if (j < N - 1) {
-                if (isOpen(i + 1, j + 2)) {
-                    connect(i + j * N, i + (j + 1) * N);
+            if (j < size - 1) {
+                if (matrix[i][j + 1] != blocked) {
+                    unionUF.union(cell, cell + size);
                 }
             }
-            if (j == 0) {
-                connect(i + j * N, top);
+            if (i == 0) {
+                unionUF.union(cell, top);
             }
-            if (j == N - 1) {
-                connect(i + j * N, bottom);
+            if (i == size - 1) {
+                unionUF.union(cell, bottom);
             }
         }
     }
@@ -85,11 +79,11 @@ public class Percolation {
         checkCornerCase(i, j);
         i--;
         j--;
-        return (connected(i + j * N, top));
+        return (unionUF.connected(i + j * size, top));
     }
 
     public boolean percolates() {
-        return connected(top, bottom);
+        return unionUF.connected(top, bottom);
     }
 
     private void checkCornerCase(int i, int j) {
@@ -107,27 +101,5 @@ public class Percolation {
         }
     }
 
-    private boolean connected(int i, int j) {
-        return root(i) == root(j);
-    }
-
-    private void connect(int i, int j) {
-        int weight_i = weights[i];
-        int weight_j = weights[j];
-        if (weight_i < weight_j) {
-            roots[root(i)] = root(j);
-            weights[j] += weights[i];
-        } else {
-            roots[root(j)] = root(i);
-            weights[i] += weights[j];
-        }
-    }
-
-    private int root(int i) {
-        while (i != roots[i]) {
-            i = roots[i];
-        }
-        return i;
-    }
 
 }
